@@ -3,10 +3,8 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../data/greeting_generator.dart';
-
-/// Notificação diária (frase no horário escolhido). Ao TOCAR, abre
-/// exatamente a mensagem da notificação (mesmo com o app fechado).
+/// Notificacao diaria GENERICA (nao revela a frase). Ao TOCAR, apenas abre o
+/// app para o usuario ver a frase do dia.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -32,7 +30,7 @@ class NotificationService {
       final name = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(name));
     } catch (_) {
-      // mantém o padrão (UTC) se não conseguir detectar
+      // mantem o padrao (UTC) se nao conseguir detectar
     }
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     await _plugin.initialize(
@@ -60,27 +58,26 @@ class NotificationService {
   Future<void> scheduleDaily(int hour, int minute) async {
     await init();
     await _plugin.cancel(_dailyId);
-    final body = GreetingGenerator.ofNow().replaceAll('{nome}', 'você');
+    // GENERICA: nao revela a frase. Ao tocar, abre o app (payload vazio).
     await _plugin.zonedSchedule(
       _dailyId,
       'Frases Evangélicas ✝️',
-      body,
+      'Toque para ver a mensagem de hoje ✝️',
       _nextInstance(hour, minute),
-      NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_frase',
           'Frase do dia',
-          channelDescription: 'A sua frase do dia',
+          channelDescription: 'Um lembrete diario para abrir o app',
           importance: Importance.high,
           priority: Priority.high,
-          styleInformation: BigTextStyleInformation(body),
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
-      payload: body,
+      payload: '',
     );
   }
 
