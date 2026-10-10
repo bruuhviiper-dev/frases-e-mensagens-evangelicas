@@ -128,7 +128,8 @@ class AppState extends ChangeNotifier {
   /// Tem acesso às categorias exclusivas (pacote, bundle ou assinatura).
   bool get ownsExclusivePack => ownsProduct(pPack) || hasTemporaryPro;
 
-  bool isCategoryLocked(bool premium) => premium && !ownsExclusivePack;
+  // Padrão app2/app27: todas as categorias são grátis.
+  bool isCategoryLocked(bool premium) => false;
 
   // ----- temas -----
   AppPalette get palette => AppPalettes.byId(_paletteId);

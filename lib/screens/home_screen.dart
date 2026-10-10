@@ -33,14 +33,14 @@ class HomeScreen extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
           ),
-          IconButton(
-            tooltip: 'Loja Premium',
-            icon: Icon(Icons.workspace_premium_rounded,
-                color: state.isPremium ? const Color(0xFFD9A406) : null),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const StoreScreen()),
+          if (!state.adsRemoved)
+            IconButton(
+              tooltip: 'Remover anúncios',
+              icon: const Icon(Icons.block_rounded),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const StoreScreen()),
+              ),
             ),
-          ),
           IconButton(
             tooltip: 'Tema',
             icon: Icon(state.isDark

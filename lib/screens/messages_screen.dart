@@ -8,35 +8,26 @@ import '../services/app_state.dart';
 import '../widgets/banner_ad.dart';
 import '../widgets/share_helper.dart';
 
-/// Lista "infinita" de mensagens geradas (sem IA, offline), com um banner a
-/// cada 5 mensagens.
+/// Lista "infinita" de mensagens geradas (sem IA, offline). Banner único
+/// ancorado no rodapé (padrão app2/app27 — sem banner intercalado na lista).
 class MessagesScreen extends StatelessWidget {
   const MessagesScreen({super.key});
-
-  static const _every = 5; // mensagens entre banners
-  static const _block = _every + 1; // 5 mensagens + 1 banner
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final state = context.watch<AppState>();
     final msgCount = GreetingGenerator.total;
-    final itemCount = msgCount + (msgCount ~/ _every);
 
     return Scaffold(
       appBar: AppBar(title: const Text('✝️  Frases Evangélicas')),
+      bottomNavigationBar: const BannerPlaceholder(),
       body: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        itemCount: itemCount,
+        padding: EdgeInsets.fromLTRB(
+            16, 12, 16, 24 + MediaQuery.of(context).viewPadding.bottom),
+        itemCount: msgCount,
         itemBuilder: (context, i) {
-          // A cada bloco de 6 posições, a última (índice 5) é um banner.
-          if (i % _block == _every) {
-            return const Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: BannerPlaceholder(),
-            );
-          }
-          final msgIndex = (i ~/ _block) * _every + (i % _block);
+          final msgIndex = i;
           final text = state.personalize(GreetingGenerator.byIndex(msgIndex));
           final share = '$text\n\n✝️ ${AppInfo.appName}\n${AppInfo.shareFooter}';
           return Card(

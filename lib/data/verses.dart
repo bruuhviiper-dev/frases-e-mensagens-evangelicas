@@ -28,12 +28,16 @@ class VerseData {
   static const _reflexao = [Color(0xFF232526), Color(0xFF414345)];
 
   static List<Verse> _mix(List<String> a, List<String> b) {
-    final total = a.length * b.length;
+    // Produto cartesiano REAL: cada abertura (a) combina com cada fecho (b).
+    // (O padrão módulo antigo, com listas de tamanho igual, só dava 12 por
+    // categoria em vez de 12x12=144.)
     final seen = <String>{};
     final out = <Verse>[];
-    for (var i = 0; i < total; i++) {
-      final t = '${a[i % a.length]} ${b[i % b.length]}';
-      if (seen.add(t)) out.add(Verse(t));
+    for (final x in a) {
+      for (final y in b) {
+        final t = '$x $y';
+        if (seen.add(t)) out.add(Verse(t));
+      }
     }
     return out;
   }

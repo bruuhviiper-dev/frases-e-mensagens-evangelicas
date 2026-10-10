@@ -87,8 +87,8 @@ class _CreateScreenState extends State<CreateScreen> {
     super.dispose();
   }
 
-  bool _pro(AppState s) =>
-      s.isPremium || s.ownsExclusivePack || s.hasTemporaryPro;
+  // Padrão app2/app27: editor 100% grátis — nada é bloqueado.
+  bool _pro(AppState s) => true;
 
   /// Recurso PRO: oferece comprar OU assistir anúncio (libera 24h).
   void _unlock(AppState s) {
