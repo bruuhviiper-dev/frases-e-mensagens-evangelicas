@@ -110,15 +110,8 @@ class StoreProducts {
             ),
       ];
 
-  static List<StoreProduct> get all => [
-        removeAds,
-        removeWatermark,
-        packExclusivas,
-        premiumBundle,
-        premiumMonthly,
-        premiumYearly,
-        ...themes,
-      ];
+  // Padrão app2: editor 100% grátis, só se vende "Remover anúncios".
+  static List<StoreProduct> get all => [removeAds];
 
   static StoreProduct? byId(String id) {
     for (final p in all) {
