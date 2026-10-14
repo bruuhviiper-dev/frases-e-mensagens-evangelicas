@@ -14,9 +14,7 @@ import 'package:share_plus/share_plus.dart';
 import '../data/app_info.dart';
 import '../data/app_theme.dart';
 import '../data/story_backgrounds.dart';
-import '../services/ads_service.dart';
 import '../services/app_state.dart';
-import 'store_screen.dart';
 
 /// Editor PRO: cria uma frase como imagem (formatos, fontes, cores, sua foto,
 /// assinatura e salvar na galeria). Recursos PRO liberados no premium.
@@ -90,58 +88,9 @@ class _CreateScreenState extends State<CreateScreen> {
   // Padrão app2/app27: editor 100% grátis — nada é bloqueado.
   bool _pro(AppState s) => true;
 
-  /// Recurso PRO: oferece comprar OU assistir anúncio (libera 24h).
-  void _unlock(AppState s) {
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 4, 20, 2),
-              child: Text('Recurso PRO 💎',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-            ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: Text(
-                  'Desbloqueie com o Premium ou assista a um anúncio e use por 24h.',
-                  textAlign: TextAlign.center),
-            ),
-            ListTile(
-              leading: const Icon(Icons.play_circle_fill_rounded,
-                  color: Color(0xFF16A34A)),
-              title: const Text('Assistir anúncio e liberar 24h'),
-              onTap: () async {
-                Navigator.pop(ctx);
-                final shown = await AdsService.instance.showRewarded(
-                    () => s.grantTemporaryPro(const Duration(hours: 24)));
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(shown
-                        ? 'PRO liberado por 24h! Aproveite 🎉'
-                        : 'Anúncio carregando, tente de novo em instantes.')));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.workspace_premium_rounded,
-                  color: Color(0xFFD9A406)),
-              title: const Text('Comprar Premium'),
-              subtitle: const Text('Desbloqueia pra sempre'),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const StoreScreen()));
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
+  /// Editor 100% grátis (padrão app2/app27): nada é bloqueado, então este
+  /// método nunca é chamado — mantido só para compatibilidade das chamadas.
+  void _unlock(AppState s) {}
 
   Future<Uint8List?> _capture() async {
     final boundary =
