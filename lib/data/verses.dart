@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'models.dart';
@@ -38,6 +40,9 @@ class VerseData {
         if (seen.add(t)) out.add(Verse(t));
       }
     }
+    // Embaralha (semente fixa = ordem estável) p/ não listar várias frases com
+    // a MESMA abertura em sequência — fica mais variado na tela.
+    out.shuffle(Random(7));
     return out;
   }
 

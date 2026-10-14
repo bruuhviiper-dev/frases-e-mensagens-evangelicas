@@ -23,7 +23,7 @@ class AdsService with WidgetsBindingObserver {
   static const _testAppOpen = 'ca-app-pub-3940256099942544/9257395921';
 
   // IDs reais — Frases Evangélicas (AdMob). App ID no AndroidManifest.
-  static const _realBanner = 'ca-app-pub-5880219350817278/7004490029';
+  static const _realBanner = 'ca-app-pub-5880219350817278/1492362799';
   static const _realInterstitial = 'ca-app-pub-0000000000000000/0000000000';
   static const _realRewarded = 'ca-app-pub-0000000000000000/0000000000';
   static const _realAppOpen = 'ca-app-pub-0000000000000000/0000000000';

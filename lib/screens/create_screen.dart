@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:gal/gal.dart';
@@ -13,7 +14,10 @@ import 'package:share_plus/share_plus.dart';
 
 import '../data/app_info.dart';
 import '../data/app_theme.dart';
+import '../data/image_backgrounds.dart';
+import '../data/photo_backgrounds.dart';
 import '../data/story_backgrounds.dart';
+import '../data/textures.dart';
 import '../services/app_state.dart';
 
 /// Editor PRO: cria uma frase como imagem (formatos, fontes, cores, sua foto,
@@ -43,8 +47,19 @@ class _CreateScreenState extends State<CreateScreen> {
   int _format = 0;
   int _font = 0;
   int _color = 0;
-  String? _photoPath;
+  String? _photoPath; // foto do usuário (galeria do celular)
+  String? _photoUrl; // foto real (Unsplash/Picsum)
+  int? _imageBg; // fundo-imagem offline
+  int? _texture; // textura offline
   bool _busy = false;
+
+  /// Limpa todas as fontes de "imagem" do fundo (deixa só o gradiente ativo).
+  void _clearImages() {
+    _photoPath = null;
+    _photoUrl = null;
+    _imageBg = null;
+    _texture = null;
+  }
 
   @override
   void initState() {
@@ -141,7 +156,12 @@ class _CreateScreenState extends State<CreateScreen> {
   Future<void> _pickPhoto() async {
     final x = await ImagePicker()
         .pickImage(source: ImageSource.gallery, imageQuality: 90);
-    if (x != null) setState(() => _photoPath = x.path);
+    if (x != null) {
+      setState(() {
+        _clearImages();
+        _photoPath = x.path;
+      });
+    }
   }
 
   Future<void> _editSignature(AppState s) async {
@@ -188,8 +208,28 @@ class _CreateScreenState extends State<CreateScreen> {
         ? 'Escreva a sua frase aqui...'
         : _controller.text.trim();
 
-    // Regra: assinatura personalizada (PRO) sempre aparece quando preenchida;
-    // premium sem assinatura = imagem limpa; grátis = marca d'água do app.
+    // Prioridade do fundo: foto do usuário > foto real > fundo-imagem > textura.
+    DecorationImage? bgImage;
+    final bool hasPhotoOverlay = _photoPath != null || _photoUrl != null;
+    if (_photoPath != null) {
+      bgImage =
+          DecorationImage(image: FileImage(File(_photoPath!)), fit: BoxFit.cover);
+    } else if (_photoUrl != null) {
+      bgImage = DecorationImage(
+          image: CachedNetworkImageProvider(_photoUrl!), fit: BoxFit.cover);
+    } else if (_imageBg != null) {
+      bgImage = DecorationImage(
+          image: AssetImage(ImageBackgrounds.all[_imageBg!]), fit: BoxFit.cover);
+    } else if (_texture != null) {
+      bgImage = DecorationImage(
+          image: AssetImage(Textures.all[_texture!]), fit: BoxFit.cover);
+    } else if (bg.isImage) {
+      bgImage =
+          DecorationImage(image: AssetImage(bg.asset!), fit: BoxFit.cover);
+    }
+
+    // Assinatura personalizada sempre aparece quando preenchida; senão marca
+    // d'água do app (removível com "Remover anúncios"/compra).
     final sig = state.customSignature.isNotEmpty
         ? state.customSignature
         : (state.canRemoveWatermark ? '' : '✝️ Frases Evangélicas');
@@ -210,22 +250,13 @@ class _CreateScreenState extends State<CreateScreen> {
                   key: _cardKey,
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: (_photoPath == null && !bg.isImage)
-                          ? AppTheme.gradient(bg.colors)
-                          : null,
-                      image: _photoPath != null
-                          ? DecorationImage(
-                              image: FileImage(File(_photoPath!)),
-                              fit: BoxFit.cover)
-                          : (bg.isImage
-                              ? DecorationImage(
-                                  image: AssetImage(bg.asset!),
-                                  fit: BoxFit.cover)
-                              : null),
+                      gradient:
+                          bgImage == null ? AppTheme.gradient(bg.colors) : null,
+                      image: bgImage,
                     ),
                     child: Stack(
                       children: [
-                        if (_photoPath != null)
+                        if (hasPhotoOverlay)
                           Container(color: Colors.black.withValues(alpha: 0.28)),
                         Center(
                           child: Padding(
@@ -349,7 +380,8 @@ class _CreateScreenState extends State<CreateScreen> {
           ),
           const SizedBox(height: 14),
 
-          _proLabel(context, 'Fundo', pro),
+          // ---- Fundos (gradientes + alguns temáticos) ----
+          _proLabel(context, 'Fundos', pro),
           SizedBox(
             height: 56,
             child: ListView.separated(
@@ -358,16 +390,18 @@ class _CreateScreenState extends State<CreateScreen> {
               separatorBuilder: (_, _) => const SizedBox(width: 10),
               itemBuilder: (context, i) {
                 final b = StoryBg.all[i];
-                final locked = b.premium && !pro;
+                final sel = !hasPhotoOverlay &&
+                    _imageBg == null &&
+                    _texture == null &&
+                    _bg == i;
                 return GestureDetector(
-                  onTap: () => locked
-                      ? _unlock(state)
-                      : setState(() {
-                          _bg = i;
-                          _photoPath = null;
-                        }),
+                  onTap: () => setState(() {
+                    _bg = i;
+                    _clearImages();
+                  }),
                   child: Container(
                     width: 48,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       gradient: b.isImage ? null : AppTheme.gradient(b.colors),
                       image: b.isImage
@@ -376,15 +410,152 @@ class _CreateScreenState extends State<CreateScreen> {
                           : null,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: (_photoPath == null && _bg == i)
+                          color: sel
                               ? Theme.of(context).colorScheme.primary
                               : Colors.transparent,
                           width: 3),
                     ),
-                    child: locked
-                        ? const Icon(Icons.lock_rounded,
-                            color: Colors.white, size: 16)
-                        : null,
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // ---- Fundos-imagem (offline) ----
+          _proLabel(context, 'Fundos-imagem', pro),
+          SizedBox(
+            height: 64,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: ImageBackgrounds.all.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, i) {
+                final sel = _imageBg == i;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _clearImages();
+                    _imageBg = i;
+                  }),
+                  child: Container(
+                    width: 48,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: sel
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                          width: 3),
+                      image: DecorationImage(
+                          image: AssetImage(ImageBackgrounds.all[i]),
+                          fit: BoxFit.cover),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // ---- Texturas (offline) ----
+          _proLabel(context, 'Texturas', pro),
+          SizedBox(
+            height: 64,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: Textures.all.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, i) {
+                final sel = _texture == i;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _clearImages();
+                    _texture = i;
+                  }),
+                  child: Container(
+                    width: 48,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: sel
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                          width: 3),
+                      image: DecorationImage(
+                          image: AssetImage(Textures.all[i]), fit: BoxFit.cover),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ---- Fotos reais (grátis, online + cache) ----
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Text('Fotos reais',
+                    style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A),
+                      borderRadius: BorderRadius.circular(20)),
+                  child: const Text('GRÁTIS',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800)),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 64,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: photoBackgrounds.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, i) {
+                final pb = photoBackgrounds[i];
+                final sel = _photoUrl == pb.full;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _clearImages();
+                    _photoUrl = pb.full;
+                  }),
+                  child: Container(
+                    width: 48,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: sel
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                          width: 3),
+                    ),
+                    child: CachedNetworkImage(
+                      imageUrl: pb.thumb,
+                      fit: BoxFit.cover,
+                      placeholder: (_, _) => const Center(
+                          child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2))),
+                      errorWidget: (_, _, _) =>
+                          const Icon(Icons.broken_image_rounded, size: 18),
+                    ),
                   ),
                 );
               },
