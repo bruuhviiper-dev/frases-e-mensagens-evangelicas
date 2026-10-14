@@ -235,7 +235,7 @@ class _CreateScreenState extends State<CreateScreen> {
         : (state.canRemoveWatermark ? '' : '✝️ Frases Evangélicas');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Criar (Editor PRO)')),
+      appBar: AppBar(title: const Text('Criar imagem')),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
             16, 12, 16, 28 + MediaQuery.of(context).viewPadding.bottom),
