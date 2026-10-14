@@ -65,7 +65,10 @@ class SplashScreen extends StatelessWidget {
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 46),
+                // Respeita a barra de navegação do sistema (edge-to-edge):
+                // soma o inset inferior pra o texto não encostar no rodapé.
+                padding: EdgeInsets.only(
+                    bottom: 28 + MediaQuery.of(context).viewPadding.bottom),
                 child: Text(
                   'por Phantom Tecnologia',
                   style: GoogleFonts.poppins(
