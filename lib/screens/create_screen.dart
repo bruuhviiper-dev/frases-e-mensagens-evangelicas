@@ -19,6 +19,7 @@ import '../data/photo_backgrounds.dart';
 import '../data/story_backgrounds.dart';
 import '../data/textures.dart';
 import '../services/app_state.dart';
+import '../services/rate_prompt.dart';
 
 /// Editor PRO: cria uma frase como imagem (formatos, fontes, cores, sua foto,
 /// assinatura e salvar na galeria). Recursos PRO liberados no premium.
@@ -127,6 +128,7 @@ class _CreateScreenState extends State<CreateScreen> {
       await file.writeAsBytes(bytes);
       await Share.shareXFiles([XFile(file.path)],
           text: noWatermark ? '' : '✝️ ${AppInfo.appName}\n${AppInfo.shareFooter}');
+      await RatePrompt.registerPositiveAction();
     } finally {
       if (mounted) setState(() => _busy = false);
     }

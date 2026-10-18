@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/app_info.dart';
+import '../services/rate_prompt.dart';
 import '../services/app_state.dart';
 import '../services/notification_service.dart';
 
@@ -77,7 +78,7 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.star_rounded, color: Color(0xFFFBBF24)),
             title: const Text('Avaliar na Play Store'),
             subtitle: const Text('Sua nota ajuda muito 💛'),
-            onTap: () => _open(AppInfo.playUrl),
+            onTap: () => RatePrompt.openReview(),
           ),
           ListTile(
             leading: const Icon(Icons.ios_share_rounded),
